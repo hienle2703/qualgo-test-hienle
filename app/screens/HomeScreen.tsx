@@ -10,8 +10,14 @@ import {
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../constants/Colors";
+import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
+import { AppStackParamList } from "../navigation/AppNavigation";
 
-const HomeScreen = ({ navigation }) => {
+type HomeScreenProps = {
+  navigation: NativeStackNavigationProp<AppStackParamList, "MovieDetailScreen">;
+};
+
+const HomeScreen = ({ navigation }: HomeScreenProps) => {
   const [searchInput, setSearchInput] = useState<string>("");
   const [movies, setMovies] = useState(data_fetched);
 
@@ -20,8 +26,10 @@ const HomeScreen = ({ navigation }) => {
   const renderMovieRow = ({ item, index }: { item: any; index: number }) => {
     const { title, img_poster } = item || {};
 
+    console.log(item, "================= item");
+
     const goToMovieDetail = () =>
-      navigation.navigate("MovieDetailScreen", { movie: item });
+      navigation.navigate("MovieDetailScreen", { imdbId: item });
     return (
       <TouchableOpacity
         key={`keyMovie ${index}`}
