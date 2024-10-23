@@ -1,4 +1,6 @@
 import { Dispatch } from "@reduxjs/toolkit";
+import axios from "axios";
+import { MovieAction } from "../reducers/movieReducer";
 
 type MovieDetail = any;
 
@@ -8,30 +10,37 @@ interface MovieDetailActionTypes {
   getMovieDetailFail: { payload: string };
 }
 
+const api = "https://imdb.iamidiotareyoutoo.com/search";
+
 export const getAllMovies =
-  (keyword: string) => async (dispatch: Dispatch<MovieDetailActionTypes>) => {
+  (keyword: string) => async (dispatch: Dispatch<MovieAction>) => {
     try {
       dispatch({
-        type: "getAllMoviesRequest",
+        type: "GET_ALL_MOVIES_REQUEST",
       });
 
-      // TODO: GỌI SDK TỰ VIẾT
-      // const { data } = await axios.get(
-      //   `${server}/product/all?keyword=${keyword}&category=${category}`,
-      //   {
-      //     withCredentials: true,
-      //   }
-      // );
+      const { data } = await axios.get(`${api}?q=${keyword}`);
 
-      dispatch({
-        type: "getAllMoviesSuccess",
-        //   payload: data.movies,
-      });
+      if (data) {
+        const formattedData = data.description.map((item: any) => {
+          return Object.keys(item).reduce((acc, key) => {
+            const newKey = key.replace("#", "").toLowerCase();
+            acc[newKey] = item[key];
+            return acc;
+          }, {});
+        });
+
+        dispatch({
+          type: "getAllMoviesSuccess",
+          payload: formattedData,
+        });
+      }
+
       // TODO: Define error
     } catch (error) {
       dispatch({
-        type: "getAllMoviesFail",
-        //   payload: error.response.data.message,
+        type: "GET_ALL_MOVIES_FAIL",
+        payload: error,
       });
     }
   };
@@ -39,21 +48,19 @@ export const getAllMovies =
 export const getMovieDetail = (id: string) => async (dispatch: any) => {
   try {
     dispatch({
-      type: "getMovieDetailRequest",
+      type: "GET_MOVIE_DETAIL_REQUEST",
     });
 
-    // const { data } = await axios.get(`${server}/product/single/${id}`, {
-    //   withCredentials: true,
-    // });
+    const { data } = await axios.get(`${api}?tt=${id}`);
 
     dispatch({
-      type: "getMovieDetailSuccess",
-      //   payload: data.product,
+      type: "GET_MOVIE_DETAIL_SUCCESS",
+      payload: data,
     });
   } catch (error) {
     dispatch({
-      type: "getMovieDetailFail",
-      //   payload: error.response.data.message,
+      type: "GET_MOVIE_DETAIL_FAIL",
+      payload: error,
     });
   }
 };

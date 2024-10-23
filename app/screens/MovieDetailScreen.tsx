@@ -9,13 +9,13 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { detail, image } from "@/mock_data";
 import { Colors } from "../constants/Colors";
 import { RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import { AppStackParamList } from "../navigation/AppNavigation";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { getMovieDetail } from "../redux/actions/movieAction";
+import LoadingDialog from "../components/Loading/LoadingDialog";
 
 type MovieDetailScreenProps = {
   navigation: NativeStackNavigationProp<AppStackParamList, "MovieDetailScreen">;
@@ -23,15 +23,18 @@ type MovieDetailScreenProps = {
 };
 
 const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
+  //TODO: SET TYPE
   const { imdbId } = route.params;
 
   // TODO: SET TYPE
   const dispatch = useDispatch<any>();
+  const { movie, loading } = useSelector((state: any) => state.movie);
 
-  const [mainImage, setMainImage] = useState<string>(image[0]);
-  const [images, setImages] = useState([...image]);
+  const [movieDetail, setMovieDetail] = useState(movie);
+  const [mainImage, setMainImage] = useState<string>("");
+  const [images, setImages] = useState<string[]>([]);
 
-  const { short, main } = detail || {};
+  const { short, main, top } = movieDetail || {};
   const {
     datePublished,
     aggregateRating,
@@ -41,6 +44,7 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
     actor,
     review,
     keywords,
+    name,
   } = short || {};
   const relatedMovies = main?.moreLikeThisTitles?.edges || {};
 
@@ -62,7 +66,7 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
           }}
           style={[styles.starIcon, { height: size * 2 }]}
         />
-        <Text style={styles.ratingTxt}>
+        <Text style={[styles.ratingTxt, { fontSize: size * 2 }]}>
           {ratingValue}
           <Text style={styles.totalRatingTxt}>/10</Text>
         </Text>
@@ -74,7 +78,7 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
     const chooseImage = () => setMainImage(item);
 
     return (
-      <TouchableOpacity onPress={chooseImage}>
+      <TouchableOpacity key={`keySubImage ${index}`} onPress={chooseImage}>
         <Image
           source={{ uri: item }}
           resizeMode={"cover"}
@@ -94,7 +98,7 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
     const { id, titleText, primaryImage, ratingsSummary } = item?.node || {};
 
     const goToMovie = () =>
-      navigation.navigate("MovieDetailScreen", { imdbId: id });
+      navigation.push("MovieDetailScreen", { imdbId: id });
 
     return (
       <TouchableOpacity
@@ -108,7 +112,10 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
           style={styles.relatedMovieImage}
           resizeMode="contain"
         />
-        {renderRatingRow({ ratingValue: ratingsSummary?.aggregateRating ?? 0 })}
+        {renderRatingRow({
+          ratingValue: ratingsSummary?.aggregateRating ?? 0,
+          size: 5,
+        })}
         <Text numberOfLines={2} style={styles.titleRelatedMovie}>
           {titleText?.text ?? ""}
         </Text>
@@ -118,7 +125,22 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
 
   useEffect(() => {
     dispatch(getMovieDetail(imdbId));
-  }, [imdbId]);
+  }, []);
+
+  useEffect(() => {
+    setMovieDetail(movie);
+
+    const { short, top } = movie || {};
+    setMainImage(short?.image);
+
+    let images: string[] = [short?.image];
+    top?.primaryVideos?.edges?.forEach((item: any) => {
+      images.push(item?.node?.thumbnail?.url);
+    });
+    setImages(images);
+  }, [movie]);
+
+  console.log("movieDetail", movieDetail?.short?.name);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -131,14 +153,21 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
               style={styles.backIcon}
             />
           </TouchableOpacity>
-          <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>Avenger: End Game</Text>
+
+          <View style={styles.titleContainer}>
+            <View style={styles.headerTitleContainer}>
+              <Text style={styles.headerTitle}>{name}</Text>
+            </View>
           </View>
+
+          <View style={styles.spaceBox} />
         </View>
-        <View style={styles.dateInfoRow}>
-          <Text style={styles.yearTxt}>{datePublished.split("-")?.[0]}</Text>
-          <Text style={styles.yearTxt}> • {genre.join(", ")}</Text>
-        </View>
+        {datePublished && (
+          <View style={styles.dateInfoRow}>
+            <Text style={styles.yearTxt}>{datePublished?.split("-")?.[0]}</Text>
+            <Text style={styles.yearTxt}> • {genre?.join(", ")}</Text>
+          </View>
+        )}
         <Image
           source={{ uri: mainImage }}
           resizeMode={"cover"}
@@ -151,33 +180,36 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
           renderItem={renderSubImages}
           showsHorizontalScrollIndicator={false}
         />
-
-        <View style={styles.ratingRow}>
+        <View style={[styles.ratingRow, { marginVertical: 10 }]}>
           {renderRatingRow({ ratingValue: aggregateRating?.ratingValue ?? 0 })}
           <Text style={styles.ratingCountTxt}>
-            By {aggregateRating.ratingCount} users
+            By {aggregateRating?.ratingCount} users
           </Text>
         </View>
-        <Text>{description ?? ""}</Text>
+        <Text style={styles.description}>{description ?? ""}</Text>
         <View style={styles.separator} />
-        <Text style={styles.infoText}>
-          Director:{" "}
-          <Text style={styles.mainInfoText}>
-            {director.map((item) => item.name)?.join(", ")}
-          </Text>
-        </Text>
-        <View style={styles.separator} />
+        {director && (
+          <>
+            <Text style={styles.infoText}>
+              Director:{" "}
+              <Text style={styles.mainInfoText}>
+                {director?.map((item) => item.name)?.join(", ")}
+              </Text>
+            </Text>
+            <View style={styles.separator} />
+          </>
+        )}
         <Text style={styles.infoText}>
           Stars:{" "}
           <Text style={styles.mainInfoText}>
-            {actor.map((item) => item.name)?.join(", ")}
+            {actor?.map((item) => item.name)?.join(", ")}
           </Text>
         </Text>
         <View style={styles.separator} />
         <Text style={styles.infoText}>
           Keywords:{" "}
           <Text style={styles.mainInfoText}>
-            {keywords.split(",").join(", ")}
+            {keywords?.split(",")?.join(", ")}
           </Text>
         </Text>
         <View style={styles.separator} />
@@ -186,7 +218,7 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
           <Text style={styles.reviewTitle}>
             User reviews{" "}
             <Text style={styles.reviewCount}>
-              {aggregateRating.ratingCount}
+              {aggregateRating?.ratingCount}
             </Text>
           </Text>
           <TouchableOpacity>
@@ -202,21 +234,27 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
               ratingValue: review?.reviewRating?.ratingValue ?? 0,
             })}
           </View>
-          <Text style={styles.reviewHeader}>{review.name}</Text>
-          <Text style={styles.reviewBody}>{review.reviewBody}</Text>
+          <Text style={styles.reviewHeader}>{review?.name}</Text>
+          <Text style={styles.reviewBody}>{review?.reviewBody}</Text>
           <Text style={styles.reviewAuthor}>
-            By {review.author.name} • {review.dateCreated}
+            By {review?.author?.name} • {review?.dateCreated}
           </Text>
         </View>
         <View style={styles.separator} />
+        <View style={styles.reviewRow}>
+          <View style={styles.reviewMark} />
+          <Text style={styles.reviewTitle}>More like this</Text>
+        </View>
         <FlatList
           data={relatedMovies}
           extraData={relatedMovies}
           renderItem={renderRelatedMovies}
           horizontal
           showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.relatedMoviesContainer}
         />
       </ScrollView>
+      {loading && <LoadingDialog />}
     </SafeAreaView>
   );
 };
@@ -232,19 +270,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     width: "100%",
     paddingVertical: 10,
+    alignItems: "center",
   },
   backIcon: {
     height: 20,
     aspectRatio: 1,
   },
   backBtn: {
-    position: "absolute",
-    left: 0,
-    paddingVertical: 10,
+    flex: 1 / 4,
+    alignItems: "flex-start",
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "bold",
+    textAlign: "center",
   },
   scrollContainer: {
     paddingHorizontal: 20,
@@ -286,7 +325,6 @@ const styles = StyleSheet.create({
   ratingTxt: {
     fontSize: 16,
     fontWeight: "bold",
-    marginVertical: 10,
   },
   totalRatingTxt: {
     color: Colors.dustyGray,
@@ -383,6 +421,10 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: Colors.corn,
   },
+  titleContainer: {
+    flex: 1,
+    alignItems: "center",
+  },
   headerTitleContainer: {
     backgroundColor: Colors.imdb,
     padding: 10,
@@ -398,5 +440,15 @@ const styles = StyleSheet.create({
   titleRelatedMovie: {
     width: 100,
     fontSize: 12,
+  },
+  relatedMoviesContainer: {
+    marginTop: 10,
+  },
+  description: {
+    fontSize: 14,
+    fontStyle: "italic",
+  },
+  spaceBox: {
+    flex: 1 / 4,
   },
 });
