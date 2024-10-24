@@ -1,3 +1,4 @@
+import React, { FC, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -7,34 +8,63 @@ import {
   ScrollView,
   FlatList,
 } from "react-native";
-import React, { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../constants/Colors";
-import { RouteProp } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
 import { AppStackParamList } from "../navigation/AppNavigation";
 import { useDispatch, useSelector } from "react-redux";
-import { getMovieDetail } from "../redux/actions/movieAction";
+import { getMovieDetail, popMovieStack } from "../redux/actions/movieAction";
 import LoadingDialog from "../components/Loading/LoadingDialog";
+import { MovieState } from "../redux/reducers/movieReducer";
+import { RouteProp } from "@react-navigation/native";
+import { AppDispatch } from "../redux/store";
 
 type MovieDetailScreenProps = {
   navigation: NativeStackNavigationProp<AppStackParamList, "MovieDetailScreen">;
   route: RouteProp<AppStackParamList, "MovieDetailScreen">;
 };
 
-const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
-  //TODO: SET TYPE
+type Director = {
+  name: string;
+  url: string;
+};
+
+type Actor = {
+  name: string;
+  url: string;
+};
+
+type RelatedMovie = {
+  node: {
+    id: string;
+    titleText: {
+      text: string;
+    };
+    primaryImage: {
+      url: string;
+    };
+    ratingsSummary: {
+      aggregateRating: number;
+    };
+  };
+};
+
+const MovieDetailScreen: FC<MovieDetailScreenProps> = ({
+  navigation,
+  route,
+}) => {
   const { imdbId } = route.params;
 
-  // TODO: SET TYPE
-  const dispatch = useDispatch<any>();
-  const { movie, loading } = useSelector((state: any) => state.movie);
+  const dispatch = useDispatch<AppDispatch>();
+  const { loading, movieStack } = useSelector(
+    (state: MovieState) => state.movie
+  );
 
-  const [movieDetail, setMovieDetail] = useState(movie);
+  const [movieDetail, setMovieDetail] = useState(movieStack.at(-1));
   const [mainImage, setMainImage] = useState<string>("");
   const [images, setImages] = useState<string[]>([]);
 
-  const { short, main, top } = movieDetail || {};
+  const { short, main } = movieDetail || {};
   const {
     datePublished,
     aggregateRating,
@@ -48,7 +78,10 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
   } = short || {};
   const relatedMovies = main?.moreLikeThisTitles?.edges || {};
 
-  const goBack = () => navigation.goBack();
+  const goBack = () => {
+    navigation.goBack();
+    dispatch(popMovieStack);
+  };
 
   const renderRatingRow = ({
     ratingValue,
@@ -74,7 +107,13 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
     );
   };
 
-  const renderSubImages = ({ item, index }: { item: any; index: number }) => {
+  const renderSubImages = ({
+    item,
+    index,
+  }: {
+    item: string;
+    index: number;
+  }) => {
     const chooseImage = () => setMainImage(item);
 
     return (
@@ -92,7 +131,7 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
     item,
     index,
   }: {
-    item: any;
+    item: RelatedMovie;
     index: number;
   }) => {
     const { id, titleText, primaryImage, ratingsSummary } = item?.node || {};
@@ -125,12 +164,13 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
 
   useEffect(() => {
     dispatch(getMovieDetail(imdbId));
-  }, []);
+  }, [imdbId]);
 
   useEffect(() => {
-    setMovieDetail(movie);
+    const targetMovie = movieStack.at(-1);
+    setMovieDetail(targetMovie);
 
-    const { short, top } = movie || {};
+    const { short, top } = targetMovie || {};
     setMainImage(short?.image);
 
     let images: string[] = [short?.image];
@@ -138,9 +178,7 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
       images.push(item?.node?.thumbnail?.url);
     });
     setImages(images);
-  }, [movie]);
-
-  console.log("movieDetail", movieDetail?.short?.name);
+  }, [movieStack]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -155,9 +193,11 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
           </TouchableOpacity>
 
           <View style={styles.titleContainer}>
-            <View style={styles.headerTitleContainer}>
-              <Text style={styles.headerTitle}>{name}</Text>
-            </View>
+            {name && (
+              <View style={styles.headerTitleContainer}>
+                <Text style={styles.headerTitle}>{name}</Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.spaceBox} />
@@ -168,23 +208,29 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
             <Text style={styles.yearTxt}> • {genre?.join(", ")}</Text>
           </View>
         )}
-        <Image
-          source={{ uri: mainImage }}
-          resizeMode={"cover"}
-          style={styles.mainImage}
-        />
-        <FlatList
-          data={images}
-          extraData={images}
-          horizontal
-          renderItem={renderSubImages}
-          showsHorizontalScrollIndicator={false}
-        />
+        {mainImage && images && (
+          <>
+            <Image
+              source={{ uri: mainImage }}
+              resizeMode={"cover"}
+              style={styles.mainImage}
+            />
+            <FlatList
+              data={images}
+              extraData={images}
+              horizontal
+              renderItem={renderSubImages}
+              showsHorizontalScrollIndicator={false}
+            />
+          </>
+        )}
         <View style={[styles.ratingRow, { marginVertical: 10 }]}>
           {renderRatingRow({ ratingValue: aggregateRating?.ratingValue ?? 0 })}
-          <Text style={styles.ratingCountTxt}>
-            By {aggregateRating?.ratingCount} users
-          </Text>
+          {aggregateRating?.ratingCount && (
+            <Text style={styles.ratingCountTxt}>
+              By {aggregateRating?.ratingCount} users
+            </Text>
+          )}
         </View>
         <Text style={styles.description}>{description ?? ""}</Text>
         <View style={styles.separator} />
@@ -193,7 +239,7 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
             <Text style={styles.infoText}>
               Director:{" "}
               <Text style={styles.mainInfoText}>
-                {director?.map((item) => item.name)?.join(", ")}
+                {director?.map((item: Director) => item.name)?.join(", ")}
               </Text>
             </Text>
             <View style={styles.separator} />
@@ -202,7 +248,7 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
         <Text style={styles.infoText}>
           Stars:{" "}
           <Text style={styles.mainInfoText}>
-            {actor?.map((item) => item.name)?.join(", ")}
+            {actor?.map((item: Actor) => item.name)?.join(", ")}
           </Text>
         </Text>
         <View style={styles.separator} />
@@ -225,34 +271,40 @@ const MovieDetailScreen = ({ navigation, route }: MovieDetailScreenProps) => {
             <Text style={styles.viewAllTxt}>View all</Text>
           </TouchableOpacity>
         </View>
-        <View style={styles.reviewBox}>
-          <View style={[styles.reviewRow, styles.spaceBetween]}>
-            <View style={styles.featuredFlag}>
-              <Text style={styles.featuredTxt}>Featured Review</Text>
+        {review && (
+          <View style={styles.reviewBox}>
+            <View style={[styles.reviewRow, styles.spaceBetween]}>
+              <View style={styles.featuredFlag}>
+                <Text style={styles.featuredTxt}>Featured Review</Text>
+              </View>
+              {renderRatingRow({
+                ratingValue: review?.reviewRating?.ratingValue ?? 0,
+              })}
             </View>
-            {renderRatingRow({
-              ratingValue: review?.reviewRating?.ratingValue ?? 0,
-            })}
+            <Text style={styles.reviewHeader}>{review?.name}</Text>
+            <Text style={styles.reviewBody}>{review?.reviewBody}</Text>
+            <Text style={styles.reviewAuthor}>
+              By {review?.author?.name} • {review?.dateCreated}
+            </Text>
           </View>
-          <Text style={styles.reviewHeader}>{review?.name}</Text>
-          <Text style={styles.reviewBody}>{review?.reviewBody}</Text>
-          <Text style={styles.reviewAuthor}>
-            By {review?.author?.name} • {review?.dateCreated}
-          </Text>
-        </View>
-        <View style={styles.separator} />
-        <View style={styles.reviewRow}>
-          <View style={styles.reviewMark} />
-          <Text style={styles.reviewTitle}>More like this</Text>
-        </View>
-        <FlatList
-          data={relatedMovies}
-          extraData={relatedMovies}
-          renderItem={renderRelatedMovies}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.relatedMoviesContainer}
-        />
+        )}
+        {relatedMovies && (
+          <>
+            <View style={styles.separator} />
+            <View style={styles.reviewRow}>
+              <View style={styles.reviewMark} />
+              <Text style={styles.reviewTitle}>More like this</Text>
+            </View>
+            <FlatList
+              data={relatedMovies}
+              extraData={relatedMovies}
+              renderItem={renderRelatedMovies}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.relatedMoviesContainer}
+            />
+          </>
+        )}
       </ScrollView>
       {loading && <LoadingDialog />}
     </SafeAreaView>

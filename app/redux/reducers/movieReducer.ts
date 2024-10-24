@@ -3,6 +3,7 @@ import { createReducer } from "@reduxjs/toolkit";
 export interface MovieState {
   movies: any[];
   movie: any;
+  movieStack: any[];
   loading: boolean;
   error: any;
   message: any;
@@ -17,7 +18,8 @@ export interface MovieAction {
     | "GET_MOVIE_DETAIL_SUCCESS"
     | "GET_MOVIE_DETAIL_FAIL"
     | "CLEAR_ERROR"
-    | "CLEAR_MESSAGE";
+    | "CLEAR_MESSAGE"
+    | "POP_MOVIE_STACK";
   payload?: any;
 }
 
@@ -25,6 +27,7 @@ export const movieReducer = createReducer(
   {
     movies: [],
     movie: {},
+    movieStack: [],
     loading: false,
     error: null,
     message: null,
@@ -50,6 +53,7 @@ export const movieReducer = createReducer(
         (state: MovieState, action: MovieAction) => {
           state.loading = false;
           state.movie = action.payload;
+          state.movieStack = [...state.movieStack, action.payload];
         }
       )
 
@@ -72,6 +76,10 @@ export const movieReducer = createReducer(
     });
     builder.addCase("CLEAR_MESSAGE", (state: MovieState) => {
       state.message = null;
+    });
+
+    builder.addCase("POP_MOVIE_STACK", (state: MovieState) => {
+      state.movieStack = state.movieStack.slice(0, -1);
     });
   }
 );

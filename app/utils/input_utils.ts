@@ -1,4 +1,4 @@
-type DebounceFunction = (...args: any[]) => void;
+type DebounceFunction = void;
 
 const debounce = (func: DebounceFunction, wait: number) => {
   let timeout: NodeJS.Timeout | null;

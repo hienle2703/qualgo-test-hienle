@@ -1,50 +1,42 @@
-# Welcome to your Expo app 👋
+# Test from Le Vu Toan Hien
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This is a test from Le Vu Toan Hien for the Mobile Developer position of Qualgo.
+For the convenience while developing, I used Expo as the suggestion of the documentation on the React Native main page.
+
+## Features
+As the test requires, I implemented the following features:
+- HomeScreen: Show random movies fetched from the Open API with search bar
+- MovieDetailScreen: Show the detail of the selected movie
+- A separated SDK is used to simplify the fetching process from the Open API, you can check it [here](https://www.npmjs.com/package/qualgo-network-sdk?activeTab=readme)
 
 ## Get started
 
-1. Install dependencies
+Get the source code from Github
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-    npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+git clone https://github.com/hienle2703/qualgo-test-hienle.git
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Install the dependencies
 
-## Learn more
+```
+npm install
+// OR
+yarn
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+## Run the app to test on Android
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+First install Expo Go on your device or emulator
 
-## Join the community
+```
+yarn android
+```
 
-Join our community of developers creating universal apps.
+Or you can type `a` after Metro started the Metro Bundler
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Run the app on iOS
+
+```
+npx expo run:ios --device
+```

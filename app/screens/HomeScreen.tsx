@@ -7,7 +7,7 @@ import {
   FlatList,
   TouchableOpacity,
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../constants/Colors";
 import { NativeStackNavigationProp } from "react-native-screens/lib/typescript/native-stack/types";
@@ -15,25 +15,55 @@ import { AppStackParamList } from "../navigation/AppNavigation";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllMovies } from "../redux/actions/movieAction";
 import { debounce } from "../utils/input_utils";
+import { MovieState } from "../redux/reducers/movieReducer";
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<AppStackParamList, "MovieDetailScreen">;
 };
 
+type MovieItem = {
+  imdb_id: string;
+  img_poster: string;
+  aka: string;
+  actors: string;
+  rank: number;
+};
+
 const HomeScreen = ({ navigation }: HomeScreenProps) => {
   const dispatch = useDispatch<any>();
 
-  // TODO: SET TYPE
-  const { movies } = useSelector((state: any) => state.movie);
+  const { movies } = useSelector((state: MovieState) => state.movie);
 
-  const [searchInput, setSearchInput] = useState<string>("a");
+  const [searchInput, setSearchInput] = useState<string>("");
   const [movieList, setMovieList] = useState([...movies]);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
-  const onChangeSearchInput = (value: string) => {
-    debounce(() => setSearchInput(value), 500);
+  const onChangeSearchInput = (value: string) => setSearchInput(value);
+
+  const onRefreshList = useCallback(() => {
+    setIsRefreshing(true);
+    dispatch(getAllMovies(searchInput));
+
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 1000);
+  }, [movies]);
+
+  const renderEmptyList = () => {
+    return (
+      <View style={styles.emptyListContainer}>
+        <Text>No movies match your search.</Text>
+      </View>
+    );
   };
 
-  const renderMovieRow = ({ item, index }: { item: any; index: number }) => {
+  const renderMovieRow = ({
+    item,
+    index,
+  }: {
+    item: MovieItem;
+    index: number;
+  }) => {
     const { imdb_id, img_poster, aka, actors, rank } = item || {};
 
     const goToMovieDetail = () =>
@@ -62,8 +92,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
   };
 
   useEffect(() => {
-    // TODO: Debounce
-    dispatch(getAllMovies(searchInput));
+    debounce(dispatch(getAllMovies(searchInput)), 500);
   }, [searchInput]);
 
   useEffect(() => {
@@ -91,6 +120,9 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
         extraData={movieList}
         renderItem={renderMovieRow}
         contentContainerStyle={styles.contentList}
+        refreshing={isRefreshing}
+        onRefresh={onRefreshList}
+        ListEmptyComponent={renderEmptyList}
       />
     </SafeAreaView>
   );
@@ -146,5 +178,9 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: Colors.dustyGray,
     fontStyle: "italic",
+  },
+  emptyListContainer: {
+    alignItems: "center",
+    paddingVertical: 30
   },
 });

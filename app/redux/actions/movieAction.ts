@@ -1,6 +1,10 @@
 import { Dispatch } from "@reduxjs/toolkit";
-import axios from "axios";
 import { MovieAction } from "../reducers/movieReducer";
+import {
+  getMovieDetailById,
+  getRandomMovies,
+  searchMovie,
+} from "qualgo-network-sdk";
 
 type MovieDetail = any;
 
@@ -10,33 +14,21 @@ interface MovieDetailActionTypes {
   getMovieDetailFail: { payload: string };
 }
 
-const api = "https://imdb.iamidiotareyoutoo.com/search";
-
 export const getAllMovies =
-  (keyword: string) => async (dispatch: Dispatch<MovieAction>) => {
+  (keyword?: string) => async (dispatch: Dispatch<MovieAction>) => {
     try {
       dispatch({
         type: "GET_ALL_MOVIES_REQUEST",
       });
 
-      const { data } = await axios.get(`${api}?q=${keyword}`);
+      const response = keyword
+        ? await searchMovie(keyword)
+        : await getRandomMovies();
 
-      if (data) {
-        const formattedData = data.description.map((item: any) => {
-          return Object.keys(item).reduce((acc, key) => {
-            const newKey = key.replace("#", "").toLowerCase();
-            acc[newKey] = item[key];
-            return acc;
-          }, {});
-        });
-
-        dispatch({
-          type: "getAllMoviesSuccess",
-          payload: formattedData,
-        });
-      }
-
-      // TODO: Define error
+      dispatch({
+        type: "GET_ALL_MOVIES_SUCCESS",
+        payload: response,
+      });
     } catch (error) {
       dispatch({
         type: "GET_ALL_MOVIES_FAIL",
@@ -45,22 +37,29 @@ export const getAllMovies =
     }
   };
 
-export const getMovieDetail = (id: string) => async (dispatch: any) => {
-  try {
-    dispatch({
-      type: "GET_MOVIE_DETAIL_REQUEST",
-    });
+export const getMovieDetail =
+  (id: string) => async (dispatch: Dispatch<MovieAction>) => {
+    try {
+      dispatch({
+        type: "GET_MOVIE_DETAIL_REQUEST",
+      });
 
-    const { data } = await axios.get(`${api}?tt=${id}`);
+      const data = await getMovieDetailById(id);
 
-    dispatch({
-      type: "GET_MOVIE_DETAIL_SUCCESS",
-      payload: data,
-    });
-  } catch (error) {
-    dispatch({
-      type: "GET_MOVIE_DETAIL_FAIL",
-      payload: error,
-    });
-  }
+      dispatch({
+        type: "GET_MOVIE_DETAIL_SUCCESS",
+        payload: data,
+      });
+    } catch (error) {
+      dispatch({
+        type: "GET_MOVIE_DETAIL_FAIL",
+        payload: error,
+      });
+    }
+  };
+
+export const popMovieStack = (dispatch: Dispatch<MovieAction>) => {
+  dispatch({
+    type: "POP_MOVIE_STACK",
+  });
 };

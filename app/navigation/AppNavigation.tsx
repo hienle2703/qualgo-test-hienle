@@ -5,7 +5,7 @@ import HomeScreen from "../screens/HomeScreen";
 import MovieDetailScreen from "../screens/MovieDetailScreen";
 
 const AppNavigation = () => {
-  const AppStack = createNativeStackNavigator();
+  const AppStack = createNativeStackNavigator<AppStackParamList>();
 
   return (
     <NavigationContainer independent>
@@ -20,6 +20,7 @@ const AppNavigation = () => {
         <AppStack.Screen
           name="MovieDetailScreen"
           component={MovieDetailScreen}
+          options={{ gestureEnabled: false }}
         />
       </AppStack.Navigator>
     </NavigationContainer>
@@ -30,5 +31,5 @@ export default AppNavigation;
 
 export type AppStackParamList = {
   HomeScreen: undefined;
-  MovieDetailScreen: { imdbId: string } | undefined;
+  MovieDetailScreen: { imdbId: string };
 };
