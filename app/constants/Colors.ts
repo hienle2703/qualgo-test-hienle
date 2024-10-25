@@ -1,5 +1,6 @@
 export const Colors = {
   white: "#FFFFFF",
+  black: "#000000",
   alto: "#E0E0E0",
   dustyGray: "#999999",
   translucentBlack03: "rgba(0, 0, 0, 0.3)",

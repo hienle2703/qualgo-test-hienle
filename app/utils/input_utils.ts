@@ -1,6 +1,4 @@
-type DebounceFunction = void;
-
-const debounce = (func: DebounceFunction, wait: number) => {
+const debounce = (func: any, wait: number) => {
   let timeout: NodeJS.Timeout | null;
 
   return (...args: any[]) => {

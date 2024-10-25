@@ -25,18 +25,22 @@ npm install
 yarn
 ```
 
-## Run the app to test on Android
+## Run the app on Android
 
-First install Expo Go on your device or emulator
+First install (Expo Go)[https://play.google.com/store/apps/details?id=host.exp.exponent&hl=vi] on your device
 
 ```
 yarn android
 ```
 
-Or you can type `a` after Metro started the Metro Bundler
+Or you can use Expo Go to scan the QR code from the terminal
 
 ## Run the app on iOS
 
+First install (Expo Go)[https://apps.apple.com/us/app/expo-go/id982107779] on your device
+
 ```
-npx expo run:ios --device
+yarn start
 ```
+
+Then use your Camera App on iPhone to scan the QR code from the terminal

@@ -7,6 +7,7 @@ import {
   Image,
   ScrollView,
   FlatList,
+  StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "../constants/Colors";
@@ -149,7 +150,7 @@ const MovieDetailScreen: FC<MovieDetailScreenProps> = ({
           source={{ uri: primaryImage?.url }}
           height={150}
           style={styles.relatedMovieImage}
-          resizeMode="contain"
+          resizeMode="cover"
         />
         {renderRatingRow({
           ratingValue: ratingsSummary?.aggregateRating ?? 0,
@@ -182,6 +183,7 @@ const MovieDetailScreen: FC<MovieDetailScreenProps> = ({
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle={"dark-content"} />
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.header}>
           <TouchableOpacity onPress={goBack} style={styles.backBtn}>
@@ -316,6 +318,7 @@ export default MovieDetailScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.white,
   },
   header: {
     justifyContent: "center",
@@ -484,6 +487,7 @@ const styles = StyleSheet.create({
   },
   relatedMovieImage: {
     borderRadius: 10,
+    marginBottom: 5,
   },
   relatedMovieContainer: {
     marginRight: 10,

@@ -6,6 +6,8 @@ import {
   TextInput,
   FlatList,
   TouchableOpacity,
+  StatusBar,
+  Platform,
 } from "react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,6 +18,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getAllMovies } from "../redux/actions/movieAction";
 import { debounce } from "../utils/input_utils";
 import { MovieState } from "../redux/reducers/movieReducer";
+import { AppDispatch } from "../redux/store";
 
 type HomeScreenProps = {
   navigation: NativeStackNavigationProp<AppStackParamList, "MovieDetailScreen">;
@@ -30,7 +33,7 @@ type MovieItem = {
 };
 
 const HomeScreen = ({ navigation }: HomeScreenProps) => {
-  const dispatch = useDispatch<any>();
+  const dispatch = useDispatch<AppDispatch>();
 
   const { movies } = useSelector((state: MovieState) => state.movie);
 
@@ -101,6 +104,7 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle={"dark-content"} />
       <Image
         style={styles.imdbLogo}
         resizeMode="contain"
@@ -109,12 +113,25 @@ const HomeScreen = ({ navigation }: HomeScreenProps) => {
         }}
       />
       <Text style={styles.findTxt}>Find your favourite movie and TV shows</Text>
-      <TextInput
-        style={styles.inputStyle}
-        value={searchInput}
-        onChangeText={onChangeSearchInput}
-        placeholder="Search movies..."
-      />
+      <View style={styles.inputContainer}>
+        <Image
+          style={styles.searchIcon}
+          source={{
+            uri: "https://cdn3.iconfinder.com/data/icons/feather-5/24/search-512.png",
+          }}
+        />
+        <TextInput
+          style={[
+            styles.inputStyle,
+            Platform.OS === "ios" && { paddingVertical: 10 },
+          ]}
+          value={searchInput}
+          onChangeText={onChangeSearchInput}
+          placeholder="Search movies..."
+          placeholderTextColor={Colors.black}
+        />
+      </View>
+
       <FlatList
         data={movieList}
         extraData={movieList}
@@ -133,6 +150,7 @@ export default HomeScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.white,
   },
   imdbLogo: {
     width: 70,
@@ -144,12 +162,21 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginLeft: 20,
   },
-  inputStyle: {
+  searchIcon: {
+    height: 20,
+    aspectRatio: 1,
+    marginRight: 5,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Colors.alto,
     marginTop: 20,
     marginHorizontal: 20,
     borderRadius: 10,
     paddingHorizontal: 10,
+  },
+  inputStyle: {
     paddingVertical: 5,
   },
   movieRow: {
@@ -181,6 +208,6 @@ const styles = StyleSheet.create({
   },
   emptyListContainer: {
     alignItems: "center",
-    paddingVertical: 30
+    paddingVertical: 30,
   },
 });
